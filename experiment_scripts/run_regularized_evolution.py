@@ -26,7 +26,7 @@ import numpy as np
 
 from tabular_benchmarks import FCNetProteinStructureBenchmark, FCNetSliceLocalizationBenchmark,\
     FCNetNavalPropulsionBenchmark, FCNetParkinsonsTelemonitoringBenchmark
-from tabular_benchmarks import NASCifar10A, NASCifar10B
+from tabular_benchmarks import NASCifar10A, NASCifar10B, NASCifar10C
 
 
 class Model(object):
@@ -181,6 +181,9 @@ if args.benchmark == "nas_cifar10a":
 elif args.benchmark == "nas_cifar10b":
     b = NASCifar10B(data_dir=args.data_dir)
 
+elif args.benchmark == "nas_cifar10c":
+    b = NASCifar10C(data_dir=args.data_dir)
+
 elif args.benchmark == "protein_structure":
     b = FCNetProteinStructureBenchmark(data_dir=args.data_dir)
 
@@ -215,6 +218,7 @@ for run_id in runs:
             population_size=args.pop_size,
             sample_size=args.sample_size)
 
+        if args.benchmark in ("nas_cifar10a", "nas_cifar10b", "nas_cifar10c"):
             res = b.get_results(ignore_invalid_configs=True)
         else:
             res = b.get_results()
