@@ -161,6 +161,9 @@ def regularized_evolution(cycles, population_size, sample_size):
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--run_id', default=0, type=int, nargs='?', help='unique number to identify this run')
+parser.add_argument('--runs', default=None, type=int, nargs='?', help='number of runs to perform')
+parser.add_argument('--run_start', default=0, type=int, nargs='?',
+                    help='run index to start with for multiple runs')
 parser.add_argument('--benchmark', default="protein_structure", type=str, nargs='?', help='specifies the benchmark')
 parser.add_argument('--n_iters', default=100, type=int, nargs='?', help='number of iterations for optimization method')
 parser.add_argument('--output_path', default="./", type=str, nargs='?',
@@ -193,16 +196,31 @@ elif args.benchmark == "parkinsons_telemonitoring":
 output_path = os.path.join(args.output_path, "regularized_evolution")
 os.makedirs(os.path.join(output_path), exist_ok=True)
 
+if args.runs is not None:
+    runs = range(args.run_start, args.runs)
+else:
+    runs = [args.run_id]
+
+
 cs = b.get_configuration_space()
 
-history = regularized_evolution(
-    cycles=args.n_iters, population_size=args.pop_size, sample_size=args.sample_size)
+for run_id in runs:
+    run_output_path = os.path.join(output_path, 'run_%d.json' % run_id)
+    if os.path.isfile(run_output_path):
+        print(f"Skipping Regularized Evolution run {run_id}")
+    else:
+        print(f"Starting Regularized Evolution run {run_id}")
+        history = regularized_evolution(
+            cycles=args.n_iters,
+            population_size=args.pop_size,
+            sample_size=args.sample_size)
 
-if args.benchmark == "nas_cifar10a" or args.benchmark == "nas_cifar10b":
-    res = b.get_results(ignore_invalid_configs=True)
-else:
-    res = b.get_results()
+            res = b.get_results(ignore_invalid_configs=True)
+        else:
+            res = b.get_results()
 
-fh = open(os.path.join(output_path, 'run_%d.json' % args.run_id), 'w')
-json.dump(res, fh)
-fh.close()
+        fh = open(run_output_path, 'w')
+        json.dump(res, fh)
+        fh.close()
+
+        b.reset_tracker()
