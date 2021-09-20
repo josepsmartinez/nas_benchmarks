@@ -15,18 +15,16 @@ class FCNetBenchmark(object):
 
         self.data = h5py.File(os.path.join(path, dataset), "r")
 
-        self.X = []
-        self.y = []
-        self.c = []
+        self.seed = seed
 
-        self.rng = np.random.RandomState(seed)
+        self.reset_tracker()
 
     def reset_tracker(self):
         # __init__() sans the data loading for multiple runs
         self.X = []
         self.y = []
         self.c = []
-        self.rng = np.random.RandomState(seed)
+        self.rng = np.random.RandomState(self.seed)
 
     def get_best_configuration(self):
 
