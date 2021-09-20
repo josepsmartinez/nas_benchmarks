@@ -223,8 +223,9 @@ output_path = os.path.join(args.output_path, "rl")
 os.makedirs(os.path.join(output_path), exist_ok=True)
 
 # Eager mode used for RL baseline
-tf.enable_eager_execution()
-tf.enable_resource_variables()
+if int(tf.__version__.split(".")[0]) == 1:
+    tf.enable_eager_execution()
+    tf.enable_resource_variables()
 
 nb_reward = Reward(b)
 
