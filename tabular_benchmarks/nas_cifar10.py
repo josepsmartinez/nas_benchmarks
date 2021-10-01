@@ -125,8 +125,8 @@ class NASCifar10A(NASCifar10):
         return 1 - data["validation_accuracy"], data["training_time"]
 
     @staticmethod
-    def get_configuration_space():
-        cs = ConfigSpace.ConfigurationSpace()
+    def get_configuration_space(seed=None):
+        cs = ConfigSpace.ConfigurationSpace(seed=seed)
 
         ops_choices = ['conv1x1-bn-relu', 'conv3x3-bn-relu', 'maxpool3x3']
         cs.add_hyperparameter(ConfigSpace.CategoricalHyperparameter("op_node_0", ops_choices))
@@ -173,8 +173,8 @@ class NASCifar10B(NASCifar10):
         return 1 - data["validation_accuracy"], data["training_time"]
 
     @staticmethod
-    def get_configuration_space():
-        cs = ConfigSpace.ConfigurationSpace()
+    def get_configuration_space(seed=None):
+        cs = ConfigSpace.ConfigurationSpace(seed=seed)
 
         ops_choices = ['conv1x1-bn-relu', 'conv3x3-bn-relu', 'maxpool3x3']
         cs.add_hyperparameter(ConfigSpace.CategoricalHyperparameter("op_node_0", ops_choices))
@@ -225,8 +225,8 @@ class NASCifar10C(NASCifar10):
         return 1 - data["validation_accuracy"], data["training_time"]
 
     @staticmethod
-    def get_configuration_space():
-        cs = ConfigSpace.ConfigurationSpace()
+    def get_configuration_space(seed=None):
+        cs = ConfigSpace.ConfigurationSpace(seed=seed)
 
         ops_choices = ['conv1x1-bn-relu', 'conv3x3-bn-relu', 'maxpool3x3']
         cs.add_hyperparameter(ConfigSpace.CategoricalHyperparameter("op_node_0", ops_choices))

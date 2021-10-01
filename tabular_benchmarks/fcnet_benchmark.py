@@ -10,7 +10,7 @@ class FCNetBenchmark(object):
 
     def __init__(self, path, dataset="fcnet_protein_structure_data.hdf5", seed=None):
 
-        cs = self.get_configuration_space()
+        cs = self.get_configuration_space(seed=seed)
         self.names = [h.name for h in cs.get_hyperparameters()]
 
         self.data = h5py.File(os.path.join(path, dataset), "r")
@@ -157,8 +157,8 @@ class FCNetBenchmark(object):
         return res
 
     @staticmethod
-    def get_configuration_space():
-        cs = ConfigSpace.ConfigurationSpace()
+    def get_configuration_space(seed=None):
+        cs = ConfigSpace.ConfigurationSpace(seed=seed)
 
         cs.add_hyperparameter(ConfigSpace.OrdinalHyperparameter("n_units_1", [16, 32, 64, 128, 256, 512]))
         cs.add_hyperparameter(ConfigSpace.OrdinalHyperparameter("n_units_2", [16, 32, 64, 128, 256, 512]))
@@ -175,25 +175,35 @@ class FCNetBenchmark(object):
 
 class FCNetSliceLocalizationBenchmark(FCNetBenchmark):
 
-    def __init__(self, data_dir="./"):
-        super(FCNetSliceLocalizationBenchmark, self).__init__(path=data_dir,
-                                                              dataset="fcnet_slice_localization_data.hdf5")
+    def __init__(self, data_dir="./", **kw):
+        super(FCNetSliceLocalizationBenchmark, self).__init__(
+            path=data_dir,
+            dataset="fcnet_slice_localization_data.hdf5",
+            **kw)
 
 
 class FCNetProteinStructureBenchmark(FCNetBenchmark):
 
-    def __init__(self, data_dir="./"):
-        super(FCNetProteinStructureBenchmark, self).__init__(path=data_dir, dataset="fcnet_protein_structure_data.hdf5")
+    def __init__(self, data_dir="./", **kw):
+        super(FCNetProteinStructureBenchmark, self).__init__(
+            path=data_dir,
+            dataset="fcnet_protein_structure_data.hdf5",
+            **kw)
 
 
 class FCNetNavalPropulsionBenchmark(FCNetBenchmark):
 
-    def __init__(self, data_dir="./"):
-        super(FCNetNavalPropulsionBenchmark, self).__init__(path=data_dir, dataset="fcnet_naval_propulsion_data.hdf5")
+    def __init__(self, data_dir="./", **kw):
+        super(FCNetNavalPropulsionBenchmark, self).__init__(
+            path=data_dir,
+            dataset="fcnet_naval_propulsion_data.hdf5",
+            **kw)
 
 
 class FCNetParkinsonsTelemonitoringBenchmark(FCNetBenchmark):
 
-    def __init__(self, data_dir="./"):
-        super(FCNetParkinsonsTelemonitoringBenchmark, self).__init__(path=data_dir,
-                                                                     dataset="fcnet_parkinsons_telemonitoring_data.hdf5")
+    def __init__(self, data_dir="./", **kw):
+        super(FCNetParkinsonsTelemonitoringBenchmark, self).__init__(
+            path=data_dir,
+            dataset="fcnet_parkinsons_telemonitoring_data.hdf5",
+            **kw)
