@@ -5,6 +5,8 @@ import numpy as np
 from nasbench import api
 from nasbench.lib import graph_util
 
+from .interface import TabularNasBenchmark
+
 MAX_EDGES = 9
 VERTICES = 7
 
@@ -32,6 +34,9 @@ class NASCifar10(object):
         self.y_valid = []
         self.y_test = []
         self.costs = []
+
+    def get_benchmark_budget(self):
+        return 108
 
     @staticmethod
     def objective_function(self, config):
@@ -63,7 +68,7 @@ class NASCifar10(object):
     def get_configuration_space():
         pass
 
-    def get_results(self, ignore_invalid_configs=False):
+    def get_results(self, ignore_invalid_configs=True):
 
         regret_validation = []
         regret_test = []
@@ -99,7 +104,7 @@ class NASCifar10A(NASCifar10):
     def objective_function(self, config, budget=108):
         if self.multi_fidelity is False:
             assert budget == 108
-        
+
         matrix = np.zeros([VERTICES, VERTICES], dtype=np.int8)
         idx = np.triu_indices(matrix.shape[0], k=1)
         for i in range(VERTICES * (VERTICES - 1) // 2):

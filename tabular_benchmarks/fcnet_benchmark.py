@@ -5,8 +5,9 @@ import ConfigSpace
 import h5py
 import numpy as np
 
+from .interface import TabularNasBenchmark
 
-class FCNetBenchmark(object):
+class FCNetBenchmark(TabularNasBenchmark):
 
     def __init__(self, path, dataset="fcnet_protein_structure_data.hdf5", seed=None):
 
@@ -15,9 +16,10 @@ class FCNetBenchmark(object):
 
         self.data = h5py.File(os.path.join(path, dataset), "r")
 
-        self.seed = seed
+        super().__init__(seed=seed)
 
-        self.reset_tracker()
+    def get_benchmark_budget(self):
+        return 100
 
     def reset_tracker(self):
         # __init__() sans the data loading for multiple runs
