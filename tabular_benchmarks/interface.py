@@ -39,5 +39,8 @@ class TabularNasBenchmark(object):
         self.reset_tracker()
         return self
 
-    def __exit__(self):
+    def __exit__(self, exc_type, exc_value, tb):
+        if exc_type is not None:
+            raise exc_value
+
         self.reset_tracker()
