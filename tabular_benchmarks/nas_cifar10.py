@@ -11,7 +11,7 @@ MAX_EDGES = 9
 VERTICES = 7
 
 
-class NASCifar10(object):
+class NASCifar10(TabularNasBenchmark):
 
     def __init__(self, data_dir, multi_fidelity=True):
 
