@@ -32,6 +32,9 @@ class TabularNasBenchmark(object):
     def get_results(self):
         raise NotImplementedError()
 
+    def get_num_valid_configs(self) -> int:
+        raise NotImplementedError()
+
     def reset_tracker(self):
         self.rng = np.random.RandomState(self.seed)
 

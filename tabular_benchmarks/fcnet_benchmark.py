@@ -158,6 +158,9 @@ class FCNetBenchmark(TabularNasBenchmark):
 
         return res
 
+    def get_num_valid_configs(self):
+        return len(self.X)
+
     @staticmethod
     def get_configuration_space(seed=None):
         cs = ConfigSpace.ConfigurationSpace(seed=seed)

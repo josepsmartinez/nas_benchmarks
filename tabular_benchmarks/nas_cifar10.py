@@ -99,6 +99,10 @@ class NASCifar10(TabularNasBenchmark):
 
         return res
 
+    def get_num_valid_configs(self):
+        X, costs, y_valid = map(np.array, (self.X, self.costs, self.y_valid))
+        return np.count_nonzero(X[(costs != 0) & np.isfinite(y_valid)])
+
 
 class NASCifar10A(NASCifar10):
     def objective_function(self, config, budget=108):
