@@ -8,32 +8,39 @@ import numpy as np
 from .interface import TabularNasBenchmark
 
 class FCNetBenchmark(TabularNasBenchmark):
+    MAX_EPOCHS = 100
 
-    def __init__(self, path, dataset="fcnet_protein_structure_data.hdf5", seed=None):
-
-        cs = self.get_configuration_space(seed=seed)
-        self.names = [h.name for h in cs.get_hyperparameters()]
+    def __init__(
+        self,
+        path,
+        dataset="fcnet_protein_structure_data.hdf5",
+        seed=None
+    ):
+        self.cs = self.get_configuration_space(seed=seed)
+        self.names = [h.name for h in self.cs.get_hyperparameters()]
 
         self.data = h5py.File(os.path.join(path, dataset), "r")
 
         super().__init__(seed=seed)
 
-    def get_benchmark_budget(self):
+    def get_benchmark_min_budget(self):
+        return 3
+
+    def get_benchmark_max_budget(self):
         return 100
 
     def reset_tracker(self):
-        # __init__() sans the data loading for multiple runs
         self.X = []
         self.y = []
         self.c = []
         self.rng = np.random.RandomState(self.seed)
 
     def get_best_configuration(self):
+        """Returns the best configuration in the dataset that
+        achieves the lowest test performance.
 
-        """
-        Returns the best configuration in the dataset that achieves the lowest test performance.
-
-        :return: Returns tuple with the best configuration, its final validation performance and its test performance
+        :return: Returns tuple with the best configuration,
+        its final validation performance and its test performance
         """
 
         configs, te, ve = [], [], []
@@ -46,9 +53,10 @@ class FCNetBenchmark(TabularNasBenchmark):
 
         return configs[b], ve[b], te[b]
 
-    def objective_function(self, config, budget=100, **kwargs):
-
-        assert 0 < budget <= 100  # check whether budget is in the correct bounds
+    def objective_function(self, config, budget=None, **kwargs):
+        if budget is None:
+            budget = self.get_benchmark_max_budget()
+        assert budget <= self.get_benchmark_max_budget()
 
         i = self.rng.randint(4)
 
@@ -60,7 +68,7 @@ class FCNetBenchmark(TabularNasBenchmark):
         valid = self.data[k]["valid_mse"][i]
         runtime = self.data[k]["runtime"][i]
 
-        time_per_epoch = runtime / 100  # divide by the maximum number of epochs
+        time_per_epoch = runtime / self.MAX_EPOCHS
 
         rt = time_per_epoch * budget
 
@@ -70,9 +78,10 @@ class FCNetBenchmark(TabularNasBenchmark):
 
         return valid[budget - 1], rt
 
-    def objective_function_learning_curve(self, config, budget=100):
-
-        assert 0 < budget <= 100  # check whether budget is in the correct bounds
+    def objective_function_learning_curve(self, config, budget=None):
+        if budget is None:
+            budget = self.get_benchmark_max_budget()
+        assert budget <= self.get_benchmark_max_budget()
 
         index = self.rng.randint(4)
 
@@ -84,7 +93,7 @@ class FCNetBenchmark(TabularNasBenchmark):
         lc = [self.data[k]["valid_mse"][index][i] for i in range(budget)]
         runtime = self.data[k]["runtime"][index]
 
-        time_per_epoch = runtime / 100 # divide by the maximum number of epochs
+        time_per_epoch = runtime / self.MAX_EPOCHS
 
         rt = [time_per_epoch * (i + 1) for i in range(budget)]
 
@@ -94,9 +103,16 @@ class FCNetBenchmark(TabularNasBenchmark):
 
         return lc, rt
 
-    def objective_function_deterministic(self, config, budget=100, index=0, **kwargs):
-
-        assert 0 < budget <= 100  # check whether budget is in the correct bounds
+    def objective_function_deterministic(
+        self,
+        config,
+        budget=None,
+        index=0,
+        **kwargs
+    ):
+        if budget is None:
+            budget = self.get_benchmark_max_budget()
+        assert budget <= self.get_benchmark_max_budget()
 
         if type(config) == ConfigSpace.Configuration:
             k = json.dumps(config.get_dictionary(), sort_keys=True)
@@ -106,7 +122,7 @@ class FCNetBenchmark(TabularNasBenchmark):
         valid = self.data[k]["valid_mse"][index]
         runtime = self.data[k]["runtime"][index]
 
-        time_per_epoch = runtime / 100 # divide by the maximum number of epochs
+        time_per_epoch = runtime / self.MAX_EPOCHS
 
         rt = time_per_epoch * budget
 
@@ -117,7 +133,6 @@ class FCNetBenchmark(TabularNasBenchmark):
         return valid[budget - 1], rt
 
     def objective_function_test(self, config, **kwargs):
-
         if type(config) == ConfigSpace.Configuration:
             k = json.dumps(config.get_dictionary(), sort_keys=True)
         else:
@@ -129,7 +144,6 @@ class FCNetBenchmark(TabularNasBenchmark):
         return test, runtime
 
     def get_results(self):
-
         inc, y_star_valid, y_star_test = self.get_best_configuration()
 
         regret_validation = []
@@ -141,7 +155,6 @@ class FCNetBenchmark(TabularNasBenchmark):
         inc_test = np.inf
 
         for i in range(len(self.X)):
-
             if inc_valid > self.y[i]:
                 inc_valid = self.y[i]
                 inc_test, _ = self.objective_function_test(self.X[i])
@@ -164,7 +177,6 @@ class FCNetBenchmark(TabularNasBenchmark):
     @staticmethod
     def get_configuration_space(seed=None):
         cs = ConfigSpace.ConfigurationSpace(seed=seed)
-
         cs.add_hyperparameter(ConfigSpace.OrdinalHyperparameter("n_units_1", [16, 32, 64, 128, 256, 512]))
         cs.add_hyperparameter(ConfigSpace.OrdinalHyperparameter("n_units_2", [16, 32, 64, 128, 256, 512]))
         cs.add_hyperparameter(ConfigSpace.OrdinalHyperparameter("dropout_1", [0.0, 0.3, 0.6]))
@@ -177,9 +189,42 @@ class FCNetBenchmark(TabularNasBenchmark):
         cs.add_hyperparameter(ConfigSpace.OrdinalHyperparameter("batch_size", [8, 16, 32, 64]))
         return cs
 
+    @staticmethod
+    def get_configuration_space_relaxed(seed=None):
+        cs = ConfigSpace.ConfigurationSpace(seed=seed)
+        cs.add_hyperparameter(ConfigSpace.UniformIntegerHyperparameter("n_units_1", lower=0, upper=5))
+        cs.add_hyperparameter(ConfigSpace.UniformIntegerHyperparameter("n_units_2", lower=0, upper=5))
+        cs.add_hyperparameter(ConfigSpace.UniformIntegerHyperparameter("dropout_1", lower=0, upper=2))
+        cs.add_hyperparameter(ConfigSpace.UniformIntegerHyperparameter("dropout_2", lower=0, upper=2))
+        cs.add_hyperparameter(ConfigSpace.CategoricalHyperparameter("activation_fn_1", ["tanh", "relu"]))
+        cs.add_hyperparameter(ConfigSpace.CategoricalHyperparameter("activation_fn_2", ["tanh", "relu"]))
+        cs.add_hyperparameter(
+            ConfigSpace.UniformIntegerHyperparameter("init_lr", lower=0, upper=5))
+        cs.add_hyperparameter(ConfigSpace.CategoricalHyperparameter("lr_schedule", ["cosine", "const"]))
+        cs.add_hyperparameter(ConfigSpace.UniformIntegerHyperparameter("batch_size", lower=0, upper=3))
+        return cs
+
+    def relax_configuration(self, config):
+        c = self.cs.sample_configuration()
+        c["n_units_1"] = self.cs.get_hyperparameter("n_units_1").sequence[
+            config["n_units_1"]]
+        c["n_units_2"] = self.cs.get_hyperparameter("n_units_2").sequence[
+            config["n_units_2"]]
+        c["dropout_1"] = self.cs.get_hyperparameter("dropout_1").sequence[
+            config["dropout_1"]]
+        c["dropout_2"] = self.cs.get_hyperparameter("dropout_2").sequence[
+            config["dropout_2"]]
+        c["init_lr"] = self.cs.get_hyperparameter("init_lr").sequence[
+            config["init_lr"]]
+        c["batch_size"] = self.cs.get_hyperparameter("batch_size").sequence[
+            config["batch_size"]]
+        c["activation_fn_1"] = config["activation_fn_1"]
+        c["activation_fn_2"] = config["activation_fn_2"]
+        c["lr_schedule"] = config["lr_schedule"]
+        return c
+
 
 class FCNetSliceLocalizationBenchmark(FCNetBenchmark):
-
     def __init__(self, data_dir="./", **kw):
         super(FCNetSliceLocalizationBenchmark, self).__init__(
             path=data_dir,
@@ -188,7 +233,6 @@ class FCNetSliceLocalizationBenchmark(FCNetBenchmark):
 
 
 class FCNetProteinStructureBenchmark(FCNetBenchmark):
-
     def __init__(self, data_dir="./", **kw):
         super(FCNetProteinStructureBenchmark, self).__init__(
             path=data_dir,
@@ -197,7 +241,6 @@ class FCNetProteinStructureBenchmark(FCNetBenchmark):
 
 
 class FCNetNavalPropulsionBenchmark(FCNetBenchmark):
-
     def __init__(self, data_dir="./", **kw):
         super(FCNetNavalPropulsionBenchmark, self).__init__(
             path=data_dir,
@@ -206,7 +249,6 @@ class FCNetNavalPropulsionBenchmark(FCNetBenchmark):
 
 
 class FCNetParkinsonsTelemonitoringBenchmark(FCNetBenchmark):
-
     def __init__(self, data_dir="./", **kw):
         super(FCNetParkinsonsTelemonitoringBenchmark, self).__init__(
             path=data_dir,

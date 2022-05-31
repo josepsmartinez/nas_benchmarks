@@ -35,7 +35,10 @@ class NASCifar10(TabularNasBenchmark):
         self.y_test = []
         self.costs = []
 
-    def get_benchmark_budget(self):
+    def get_benchmark_min_budget(self):
+        return 4
+
+    def get_benchmark_max_budget(self):
         return 108
 
     @staticmethod
@@ -49,7 +52,6 @@ class NASCifar10(TabularNasBenchmark):
         self.costs.append(costs)
 
     def record_valid(self, config, data, model_spec):
-
         self.X.append(config)
 
         # compute mean test error for the final budget
