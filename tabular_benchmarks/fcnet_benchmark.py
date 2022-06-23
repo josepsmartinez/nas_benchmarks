@@ -7,6 +7,7 @@ import numpy as np
 
 from .interface import TabularNasBenchmark
 
+
 class FCNetBenchmark(TabularNasBenchmark):
     MAX_EPOCHS = 100
 
@@ -21,6 +22,8 @@ class FCNetBenchmark(TabularNasBenchmark):
 
         self.data = h5py.File(os.path.join(path, dataset), "r")
 
+        self.rng = np.random.RandomState(seed)
+
         super().__init__(seed=seed)
 
     def get_benchmark_min_budget(self):
@@ -28,12 +31,6 @@ class FCNetBenchmark(TabularNasBenchmark):
 
     def get_benchmark_max_budget(self):
         return 100
-
-    def reset_tracker(self):
-        self.X = []
-        self.y = []
-        self.c = []
-        self.rng = np.random.RandomState(self.seed)
 
     def get_best_configuration(self):
         """Returns the best configuration in the dataset that
@@ -52,56 +49,6 @@ class FCNetBenchmark(TabularNasBenchmark):
         b = np.argmin(te)
 
         return configs[b], ve[b], te[b]
-
-    def objective_function(self, config, budget=None, **kwargs):
-        if budget is None:
-            budget = self.get_benchmark_max_budget()
-        assert budget <= self.get_benchmark_max_budget()
-
-        i = self.rng.randint(4)
-
-        if type(config) == ConfigSpace.Configuration:
-            k = json.dumps(config.get_dictionary(), sort_keys=True)
-        else:
-            k = json.dumps(config, sort_keys=True)
-
-        valid = self.data[k]["valid_mse"][i]
-        runtime = self.data[k]["runtime"][i]
-
-        time_per_epoch = runtime / self.MAX_EPOCHS
-
-        rt = time_per_epoch * budget
-
-        self.X.append(config)
-        self.y.append(valid[budget - 1])
-        self.c.append(rt)
-
-        return valid[budget - 1], rt
-
-    def objective_function_learning_curve(self, config, budget=None):
-        if budget is None:
-            budget = self.get_benchmark_max_budget()
-        assert budget <= self.get_benchmark_max_budget()
-
-        index = self.rng.randint(4)
-
-        if type(config) == ConfigSpace.Configuration:
-            k = json.dumps(config.get_dictionary(), sort_keys=True)
-        else:
-            k = json.dumps(config, sort_keys=True)
-
-        lc = [self.data[k]["valid_mse"][index][i] for i in range(budget)]
-        runtime = self.data[k]["runtime"][index]
-
-        time_per_epoch = runtime / self.MAX_EPOCHS
-
-        rt = [time_per_epoch * (i + 1) for i in range(budget)]
-
-        self.X.append(config)
-        self.y.append(lc[-1])
-        self.c.append(rt[-1])
-
-        return lc, rt
 
     def objective_function_deterministic(
         self,
@@ -126,11 +73,41 @@ class FCNetBenchmark(TabularNasBenchmark):
 
         rt = time_per_epoch * budget
 
-        self.X.append(config)
-        self.y.append(valid[budget - 1])
-        self.c.append(rt)
+        return {
+            'config': config,
+            'loss_valid': valid[budget - 1],
+            'cost': rt
+        }
 
-        return valid[budget - 1], rt
+    def objective_function(self, config, budget=None, **kwargs):
+        return self.objective_function_deterministic(
+            config, budget=budget, index=self.rng.randint(4)
+        )
+
+    def objective_function_learning_curve(self, config, budget=None):
+        if budget is None:
+            budget = self.get_benchmark_max_budget()
+        assert budget <= self.get_benchmark_max_budget()
+
+        index = self.rng.randint(4)
+
+        if type(config) == ConfigSpace.Configuration:
+            k = json.dumps(config.get_dictionary(), sort_keys=True)
+        else:
+            k = json.dumps(config, sort_keys=True)
+
+        lc = [self.data[k]["valid_mse"][index][i] for i in range(budget)]
+        runtime = self.data[k]["runtime"][index]
+
+        time_per_epoch = runtime / self.MAX_EPOCHS
+
+        rt = [time_per_epoch * (i + 1) for i in range(budget)]
+
+        return {
+            'config': config,
+            'loss_valid': lc[-1],
+            'cost': rt[-1]
+        }
 
     def objective_function_test(self, config, **kwargs):
         if type(config) == ConfigSpace.Configuration:
@@ -142,34 +119,6 @@ class FCNetBenchmark(TabularNasBenchmark):
         runtime = np.mean(self.data[k]["runtime"])
 
         return test, runtime
-
-    def get_results(self):
-        inc, y_star_valid, y_star_test = self.get_best_configuration()
-
-        regret_validation = []
-        regret_test = []
-        runtime = []
-        rt = 0
-
-        inc_valid = np.inf
-        inc_test = np.inf
-
-        for i in range(len(self.X)):
-            if inc_valid > self.y[i]:
-                inc_valid = self.y[i]
-                inc_test, _ = self.objective_function_test(self.X[i])
-
-            regret_validation.append(float(inc_valid - y_star_valid))
-            regret_test.append(float(inc_test - y_star_test))
-            rt += self.c[i]
-            runtime.append(float(rt))
-
-        res = dict()
-        res['regret_validation'] = regret_validation
-        res['regret_test'] = regret_test
-        res['runtime'] = runtime
-
-        return res
 
     def get_num_valid_configs(self):
         return len(self.X)

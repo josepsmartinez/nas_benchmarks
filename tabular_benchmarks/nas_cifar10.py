@@ -1,3 +1,4 @@
+import typing
 import os
 
 import ConfigSpace
@@ -12,28 +13,15 @@ VERTICES = 7
 
 
 class NASCifar10(TabularNasBenchmark):
-
     def __init__(self, data_dir, multi_fidelity=True):
-
         self.multi_fidelity = multi_fidelity
         if self.multi_fidelity:
             self.dataset = api.NASBench(os.path.join(data_dir, 'nasbench_full.tfrecord'))
         else:
             self.dataset = api.NASBench(os.path.join(data_dir, 'nasbench_only108.tfrecord'))
-        self.X = []
-        self.y_valid = []
-        self.y_test = []
-        self.costs = []
 
         self.y_star_valid = 0.04944576819737756  # lowest mean validation error
         self.y_star_test = 0.056824247042338016  # lowest mean test error
-
-    def reset_tracker(self):
-        # __init__() sans the data loading for multiple runs
-        self.X = []
-        self.y_valid = []
-        self.y_test = []
-        self.costs = []
 
     def get_benchmark_min_budget(self):
         return 4
@@ -42,64 +30,12 @@ class NASCifar10(TabularNasBenchmark):
         return 108
 
     @staticmethod
-    def objective_function(self, config):
-        pass
-
-    def record_invalid(self, config, valid, test, costs):
-        self.X.append(config)
-        self.y_valid.append(valid)
-        self.y_test.append(test)
-        self.costs.append(costs)
-
-    def record_valid(self, config, data, model_spec):
-        self.X.append(config)
-
-        # compute mean test error for the final budget
-        _, metrics = self.dataset.get_metrics_from_spec(model_spec)
-        mean_test_error = 1 - np.mean([metrics[108][i]["final_test_accuracy"] for i in range(3)])
-        self.y_test.append(mean_test_error)
-
-        # compute validation error for the chosen budget
-        valid_error = 1 - data["validation_accuracy"]
-        self.y_valid.append(valid_error)
-
-        runtime = data["training_time"]
-        self.costs.append(runtime)
+    def objective_function(self, config) -> typing.Union[typing.Dict, typing.NoReturn]:
+        raise NotImplementedError()
 
     @staticmethod
     def get_configuration_space():
-        pass
-
-    def get_results(self, ignore_invalid_configs=True):
-
-        regret_validation = []
-        regret_test = []
-        runtime = []
-        rt = 0
-
-        inc_valid = np.inf
-        inc_test = np.inf
-
-        for i in range(len(self.X)):
-
-            if ignore_invalid_configs and self.costs[i] == 0:
-                continue
-
-            if inc_valid > self.y_valid[i]:
-                inc_valid = self.y_valid[i]
-                inc_test = self.y_test[i]
-
-            regret_validation.append(float(inc_valid - self.y_star_valid))
-            regret_test.append(float(inc_test - self.y_star_test))
-            rt += self.costs[i]
-            runtime.append(float(rt))
-
-        res = dict()
-        res['regret_validation'] = regret_validation
-        res['regret_test'] = regret_test
-        res['runtime'] = runtime
-
-        return res
+        raise NotImplementedError()
 
     def get_num_valid_configs(self):
         X, costs, y_valid = map(np.array, (self.X, self.costs, self.y_valid))
@@ -107,7 +43,7 @@ class NASCifar10(TabularNasBenchmark):
 
 
 class NASCifar10A(NASCifar10):
-    def objective_function(self, config, budget=108):
+    def objective_function(self, config, budget=108) -> typing.Union[typing.Dict, typing.NoReturn]:
         if self.multi_fidelity is False:
             assert budget == 108
 
@@ -121,19 +57,21 @@ class NASCifar10A(NASCifar10):
         # if not graph_util.is_full_dag(matrix) or graph_util.num_edges(matrix) > MAX_EDGES:
         if graph_util.num_edges(matrix) > MAX_EDGES:
             self.record_invalid(config, 1, 1, 0)
-            return 1, 0
+            return None
 
         labeling = [config["op_node_%d" % i] for i in range(5)]
         labeling = ['input'] + list(labeling) + ['output']
         model_spec = api.ModelSpec(matrix, labeling)
         try:
-           data = self.dataset.query(model_spec, epochs=budget)
+            data = self.dataset.query(model_spec, epochs=budget)
         except api.OutOfDomainError:
-            self.record_invalid(config, 1, 1, 0)
-            return 1, 0
+            return None
 
-        self.record_valid(config, data, model_spec)
-        return 1 - data["validation_accuracy"], data["training_time"]
+        return {
+            'config': config,
+            'loss_valid': 1 - data["validation_accuracy"],
+            'cost': data["training_time"]
+        }
 
     @staticmethod
     def get_configuration_space(seed=None):
@@ -167,8 +105,7 @@ class NASCifar10B(NASCifar10):
                                  dtype=np.int8)
         # if not graph_util.is_full_dag(matrix) or graph_util.num_edges(matrix) > MAX_EDGES:
         if graph_util.num_edges(matrix) > MAX_EDGES:
-            self.record_invalid(config, 1, 1, 0)
-            return 1, 0
+            return None
 
         labeling = [config["op_node_%d" % i] for i in range(5)]
         labeling = ['input'] + list(labeling) + ['output']
@@ -176,12 +113,13 @@ class NASCifar10B(NASCifar10):
         try:
             data = self.dataset.query(model_spec, epochs=budget)
         except api.OutOfDomainError:
-            self.record_invalid(config, 1, 1, 0)
-            return 1, 0
+            return None
 
-        self.record_valid(config, data, model_spec)
-
-        return 1 - data["validation_accuracy"], data["training_time"]
+        return {
+            'config': config,
+            'loss_valid': 1 - data["validation_accuracy"],
+            'cost': data["training_time"]
+        }
 
     @staticmethod
     def get_configuration_space(seed=None):
@@ -219,8 +157,7 @@ class NASCifar10C(NASCifar10):
             matrix[row, col] = binay_encoding[i]
 
         if graph_util.num_edges(matrix) > MAX_EDGES:
-            self.record_invalid(config, 1, 1, 0)
-            return 1, 0
+            return None
 
         labeling = [config["op_node_%d" % i] for i in range(5)]
         labeling = ['input'] + list(labeling) + ['output']
@@ -228,12 +165,13 @@ class NASCifar10C(NASCifar10):
         try:
             data = self.dataset.query(model_spec, epochs=budget)
         except api.OutOfDomainError:
-            self.record_invalid(config, 1, 1, 0)
-            return 1, 0
+            return None
 
-        self.record_valid(config, data, model_spec)
-
-        return 1 - data["validation_accuracy"], data["training_time"]
+        return {
+            'config': config,
+            'loss_valid': 1 - data["validation_accuracy"],
+            'cost': data["training_time"]
+        }
 
     @staticmethod
     def get_configuration_space(seed=None):
