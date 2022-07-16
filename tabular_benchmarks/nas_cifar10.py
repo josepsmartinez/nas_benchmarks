@@ -13,6 +13,11 @@ VERTICES = 7
 
 
 class NASCifar10(TabularNasBenchmark):
+    null_res = {
+        'loss_valid': np.inf,
+        'cost': np.inf
+    }
+
     def __init__(self, data_dir, multi_fidelity=True):
         self.multi_fidelity = multi_fidelity
         if self.multi_fidelity:
@@ -56,8 +61,7 @@ class NASCifar10A(NASCifar10):
 
         # if not graph_util.is_full_dag(matrix) or graph_util.num_edges(matrix) > MAX_EDGES:
         if graph_util.num_edges(matrix) > MAX_EDGES:
-            self.record_invalid(config, 1, 1, 0)
-            return None
+            return {'config': config} | self.null_res
 
         labeling = [config["op_node_%d" % i] for i in range(5)]
         labeling = ['input'] + list(labeling) + ['output']
@@ -65,7 +69,7 @@ class NASCifar10A(NASCifar10):
         try:
             data = self.dataset.query(model_spec, epochs=budget)
         except api.OutOfDomainError:
-            return None
+            return {'config': config} | self.null_res
 
         return {
             'config': config,
@@ -105,7 +109,7 @@ class NASCifar10B(NASCifar10):
                                  dtype=np.int8)
         # if not graph_util.is_full_dag(matrix) or graph_util.num_edges(matrix) > MAX_EDGES:
         if graph_util.num_edges(matrix) > MAX_EDGES:
-            return None
+            return {'config': config} | self.null_res
 
         labeling = [config["op_node_%d" % i] for i in range(5)]
         labeling = ['input'] + list(labeling) + ['output']
@@ -113,7 +117,7 @@ class NASCifar10B(NASCifar10):
         try:
             data = self.dataset.query(model_spec, epochs=budget)
         except api.OutOfDomainError:
-            return None
+            return {'config': config} | self.null_res
 
         return {
             'config': config,
@@ -157,7 +161,7 @@ class NASCifar10C(NASCifar10):
             matrix[row, col] = binay_encoding[i]
 
         if graph_util.num_edges(matrix) > MAX_EDGES:
-            return None
+            return {'config': config} | self.null_res
 
         labeling = [config["op_node_%d" % i] for i in range(5)]
         labeling = ['input'] + list(labeling) + ['output']
@@ -165,7 +169,7 @@ class NASCifar10C(NASCifar10):
         try:
             data = self.dataset.query(model_spec, epochs=budget)
         except api.OutOfDomainError:
-            return None
+            return {'config': config} | self.null_res
 
         return {
             'config': config,
