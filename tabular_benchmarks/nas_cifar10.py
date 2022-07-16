@@ -46,6 +46,8 @@ class NASCifar10(TabularNasBenchmark):
         X, costs, y_valid = map(np.array, (self.X, self.costs, self.y_valid))
         return np.count_nonzero(X[(costs != 0) & np.isfinite(y_valid)])
 
+    # TODO: function : sample_spec -> obj_fn
+
 
 class NASCifar10A(NASCifar10):
     def objective_function(self, config, budget=108) -> typing.Union[typing.Dict, typing.NoReturn]:
@@ -73,8 +75,8 @@ class NASCifar10A(NASCifar10):
 
         return {
             'config': config,
-            'loss_valid': 1 - data["validation_accuracy"],
-            'cost': data["training_time"]
+            'loss_valid': 1 - data['validation_accuracy'],
+            'cost': data['training_time']
         }
 
     @staticmethod
@@ -135,7 +137,7 @@ class NASCifar10B(NASCifar10):
         cs.add_hyperparameter(ConfigSpace.CategoricalHyperparameter("op_node_2", ops_choices))
         cs.add_hyperparameter(ConfigSpace.CategoricalHyperparameter("op_node_3", ops_choices))
         cs.add_hyperparameter(ConfigSpace.CategoricalHyperparameter("op_node_4", ops_choices))
-        cat = [i for i in range((VERTICES * (VERTICES - 1)) // 2)]
+        cat = list(range((VERTICES * (VERTICES - 1)) // 2))
         for i in range(MAX_EDGES):
             cs.add_hyperparameter(ConfigSpace.CategoricalHyperparameter("edge_%d" % i, cat))
         return cs
@@ -146,9 +148,9 @@ class NASCifar10C(NASCifar10):
         if self.multi_fidelity is False:
             assert budget == 108
 
-        edge_prob = []
-        for i in range(VERTICES * (VERTICES - 1) // 2):
-            edge_prob.append(config["edge_%d" % i])
+        edge_prob = [
+            config["edge_%d" % i]
+            for i in range(VERTICES * (VERTICES - 1) // 2)]
 
         idx = np.argsort(edge_prob)[::-1][:config["num_edges"]]
         binay_encoding = np.zeros(len(edge_prob))
