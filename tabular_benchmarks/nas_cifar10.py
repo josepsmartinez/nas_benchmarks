@@ -28,12 +28,6 @@ class NASCifar10(TabularNasBenchmark):
         self.y_star_valid = 0.04944576819737756  # lowest mean validation error
         self.y_star_test = 0.056824247042338016  # lowest mean test error
 
-    def get_benchmark_min_budget(self):
-        return 4
-
-    def get_benchmark_max_budget(self):
-        return 108
-
     @staticmethod
     def objective_function(self, config) -> typing.Union[typing.Dict, typing.NoReturn]:
         raise NotImplementedError()

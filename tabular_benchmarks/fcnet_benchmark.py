@@ -26,12 +26,6 @@ class FCNetBenchmark(TabularNasBenchmark):
 
         super().__init__(seed=seed)
 
-    def get_benchmark_min_budget(self):
-        return 3
-
-    def get_benchmark_max_budget(self):
-        return 100
-
     def get_best_configuration(self):
         """Returns the best configuration in the dataset that
         achieves the lowest test performance.
