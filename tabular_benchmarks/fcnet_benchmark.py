@@ -69,7 +69,7 @@ class FCNetBenchmark(TabularNasBenchmark):
 
         return {
             'config': config,
-            'loss_valid': valid[budget - 1],
+            'loss': valid[budget - 1],
             'cost': rt
         }
 
@@ -99,7 +99,7 @@ class FCNetBenchmark(TabularNasBenchmark):
 
         return {
             'config': config,
-            'loss_valid': lc[-1],
+            'loss': lc[-1],
             'cost': rt[-1]
         }
 

@@ -14,7 +14,7 @@ VERTICES = 7
 
 class NASCifar10(TabularNasBenchmark):
     null_res = {
-        'loss_valid': np.inf,
+        'loss': np.inf,
         'cost': np.inf
     }
 
@@ -69,7 +69,7 @@ class NASCifar10A(NASCifar10):
 
         return {
             'config': config,
-            'loss_valid': 1 - data['validation_accuracy'],
+            'loss': 1 - data['validation_accuracy'],
             'cost': data['training_time']
         }
 
@@ -117,7 +117,7 @@ class NASCifar10B(NASCifar10):
 
         return {
             'config': config,
-            'loss_valid': 1 - data["validation_accuracy"],
+            'loss': 1 - data["validation_accuracy"],
             'cost': data["training_time"]
         }
 
@@ -169,7 +169,7 @@ class NASCifar10C(NASCifar10):
 
         return {
             'config': config,
-            'loss_valid': 1 - data["validation_accuracy"],
+            'loss': 1 - data["validation_accuracy"],
             'cost': data["training_time"]
         }
 
