@@ -24,6 +24,7 @@ class NASCifar10(TabularNasBenchmark):
             self.dataset = api.NASBench(os.path.join(data_dir, 'nasbench_full.tfrecord'))
         else:
             self.dataset = api.NASBench(os.path.join(data_dir, 'nasbench_only108.tfrecord'))
+        self.max_model_evals = 108
 
         self.y_star_valid = 0.04944576819737756  # lowest mean validation error
         self.y_star_test = 0.056824247042338016  # lowest mean test error
@@ -40,13 +41,10 @@ class NASCifar10(TabularNasBenchmark):
         X, costs, y_valid = map(np.array, (self.X, self.costs, self.y_valid))
         return np.count_nonzero(X[(costs != 0) & np.isfinite(y_valid)])
 
-    # TODO: function : sample_spec -> obj_fn
-
 
 class NASCifar10A(NASCifar10):
-    def objective_function(self, config, budget=108) -> typing.Union[typing.Dict, typing.NoReturn]:
-        if self.multi_fidelity is False:
-            assert budget == 108
+    def objective_function(self, config) -> typing.Union[typing.Dict, typing.NoReturn]:
+        budget = self.max_model_evals
 
         matrix = np.zeros([VERTICES, VERTICES], dtype=np.int8)
         idx = np.triu_indices(matrix.shape[0], k=1)
@@ -89,9 +87,8 @@ class NASCifar10A(NASCifar10):
 
 
 class NASCifar10B(NASCifar10):
-    def objective_function(self, config, budget=108):
-        if self.multi_fidelity is False:
-            assert budget == 108
+    def objective_function(self, config):
+        budget = self.max_model_evals
 
         bitlist = [0] * (VERTICES * (VERTICES - 1) // 2)
         for i in range(MAX_EDGES):
@@ -138,9 +135,8 @@ class NASCifar10B(NASCifar10):
 
 
 class NASCifar10C(NASCifar10):
-    def objective_function(self, config, budget=108):
-        if self.multi_fidelity is False:
-            assert budget == 108
+    def objective_function(self, config):
+        budget = self.max_model_evals
 
         edge_prob = [
             config["edge_%d" % i]
