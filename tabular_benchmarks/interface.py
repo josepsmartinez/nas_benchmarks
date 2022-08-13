@@ -1,6 +1,6 @@
 import typing
 
-import ConfigSpace
+import ConfigSpace as CS
 
 
 class TabularNasBenchmark(object):
@@ -10,13 +10,13 @@ class TabularNasBenchmark(object):
     @staticmethod
     def get_configuration_space(
         seed=None
-    ) -> ConfigSpace.ConfigurationSpace:
+    ) -> CS.ConfigurationSpace:
         raise NotImplementedError()
 
     @classmethod
     def get_configuration_space_relaxed(
         cls, seed=None
-    ) -> ConfigSpace.ConfigurationSpace:
+    ) -> CS.ConfigurationSpace:
         return cls.get_configuration_space(seed=seed)
 
     def relax_configuration(self, config):
@@ -27,31 +27,25 @@ class TabularNasBenchmark(object):
     ) -> typing.Dict:
         raise NotImplementedError()
 
-    def get_benchmark_min_budget(self) -> int:
-        raise NotImplementedError()
-
-    def get_benchmark_max_budget(self) -> int:
-        raise NotImplementedError()
-
-    def objective_function(self, config) -> typing.Dict:
+    def objective_function(self, config, **objfn_kw) -> typing.Dict:
         raise NotImplementedError()
 
     def objective_function_learning_curve(
         self,
-        config: ConfigSpace.Configuration
+        config: CS.Configuration, **objfn_kw
     ) -> typing.Dict:
         raise NotImplementedError()
 
     def objective_function_deterministic(
         self,
-        config: ConfigSpace.Configuration,
-        idx: int = 0
+        config: CS.Configuration,
+        idx: int = 0, **objfn_kw
     ) -> typing.Dict:
         raise NotImplementedError()
 
     def objective_function_test(
         self,
-        config: ConfigSpace.Configuration
+        config: CS.Configuration, **objfn_kw
     ) -> typing.Dict:
         raise NotImplementedError()
 
