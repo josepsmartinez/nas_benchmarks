@@ -47,14 +47,10 @@ class FCNetBenchmark(TabularNasBenchmark):
     def objective_function_deterministic(
         self,
         config,
-        budget=None,
+        budget=100,
         index=0,
         **kwargs
     ):
-        if budget is None:
-            budget = self.get_benchmark_max_budget()
-        assert budget <= self.get_benchmark_max_budget()
-
         if type(config) == ConfigSpace.Configuration:
             k = json.dumps(config.get_dictionary(), sort_keys=True)
         else:
@@ -73,16 +69,12 @@ class FCNetBenchmark(TabularNasBenchmark):
             'cost': rt
         }
 
-    def objective_function(self, config, budget=None, **kwargs):
+    def objective_function(self, config, **kwargs):
         return self.objective_function_deterministic(
-            config, budget=budget, index=self.rng.randint(4)
+            config, index=self.rng.randint(4)
         )
 
-    def objective_function_learning_curve(self, config, budget=None):
-        if budget is None:
-            budget = self.get_benchmark_max_budget()
-        assert budget <= self.get_benchmark_max_budget()
-
+    def objective_function_learning_curve(self, config, budget=100):
         index = self.rng.randint(4)
 
         if type(config) == ConfigSpace.Configuration:
